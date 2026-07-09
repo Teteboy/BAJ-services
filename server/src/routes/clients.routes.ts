@@ -43,7 +43,7 @@ router.get('/', authenticate, requireAdmin, async (req: AuthRequest, res: Respon
 // GET /api/clients/:id
 router.get('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   const client = await prisma.client.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: clientInclude,
   });
   if (!client) { res.status(404).json({ message: 'Client not found' }); return; }
@@ -81,7 +81,7 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res: Respo
 router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   const { companyName, phone, paymentTerms, isActive } = req.body;
   const client = await prisma.client.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { companyName, phone, paymentTerms, isActive },
     include: clientInclude,
   });
@@ -92,7 +92,7 @@ router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Res
 router.patch('/:id/password', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   const { password } = req.body;
   if (!password || password.length < 6) { res.status(400).json({ message: 'Password must be at least 6 characters' }); return; }
-  const client = await prisma.client.findUnique({ where: { id: req.params.id } });
+  const client = await prisma.client.findUnique({ where: { id: String(req.params.id) } });
   if (!client) { res.status(404).json({ message: 'Client not found' }); return; }
   const hashed = await bcrypt.hash(password, 12);
   await prisma.user.update({ where: { id: client.userId }, data: { password: hashed } });
@@ -101,7 +101,7 @@ router.patch('/:id/password', authenticate, requireAdmin, async (req: AuthReques
 
 // DELETE /api/clients/:id
 router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
-  const client = await prisma.client.findUnique({ where: { id: req.params.id } });
+  const client = await prisma.client.findUnique({ where: { id: String(req.params.id) } });
   if (!client) { res.status(404).json({ message: 'Client not found' }); return; }
   // Cascade: delete user (which cascades to client)
   await prisma.user.delete({ where: { id: client.userId } });
@@ -112,9 +112,9 @@ router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: 
 router.post('/:id/prices', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   const { productId, pricePerLiter } = req.body;
   const price = await prisma.clientProductPrice.upsert({
-    where: { clientId_productId: { clientId: req.params.id, productId } },
+    where: { clientId_productId: { clientId: String(req.params.id), productId } },
     update: { pricePerLiter },
-    create: { clientId: req.params.id, productId, pricePerLiter },
+    create: { clientId: String(req.params.id), productId, pricePerLiter },
     include: { product: true },
   });
   res.json({ data: price });
@@ -122,7 +122,7 @@ router.post('/:id/prices', authenticate, requireAdmin, async (req: AuthRequest, 
 
 // DELETE /api/clients/:id/prices/:priceId
 router.delete('/:id/prices/:priceId', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
-  await prisma.clientProductPrice.delete({ where: { id: req.params.priceId } });
+  await prisma.clientProductPrice.delete({ where: { id: String(req.params.priceId) } });
   res.json({ data: { message: 'Price removed' } });
 });
 
@@ -130,14 +130,14 @@ router.delete('/:id/prices/:priceId', authenticate, requireAdmin, async (req: Au
 router.post('/:id/locations', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   const { name, address } = req.body;
   const location = await prisma.deliveryLocation.create({
-    data: { clientId: req.params.id, name, address },
+    data: { clientId: String(req.params.id), name, address },
   });
   res.status(201).json({ data: location });
 });
 
 // DELETE /api/clients/:id/locations/:locationId
 router.delete('/:id/locations/:locationId', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
-  await prisma.deliveryLocation.delete({ where: { id: req.params.locationId } });
+  await prisma.deliveryLocation.delete({ where: { id: String(req.params.locationId) } });
   res.json({ data: { message: 'Location deleted' } });
 });
 

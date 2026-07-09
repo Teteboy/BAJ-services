@@ -19,7 +19,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
 
 // GET /api/products/:id
 router.get('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
-  const product = await prisma.product.findUnique({ where: { id: req.params.id } });
+  const product = await prisma.product.findUnique({ where: { id: String(req.params.id) } });
   if (!product) { res.status(404).json({ message: 'Product not found' }); return; }
   res.json({ data: product });
 });
@@ -42,7 +42,7 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res: Respo
 router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   const { name, description, isActive } = req.body;
   const product = await prisma.product.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { name, description, ...(isActive !== undefined && { isActive }) },
   });
   res.json({ data: product });
@@ -51,7 +51,7 @@ router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Res
 // DELETE /api/products/:id — soft delete (deactivate)
 router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   await prisma.product.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { isActive: false },
   });
   res.json({ data: { message: 'Product deactivated' } });

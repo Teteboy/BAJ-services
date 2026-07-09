@@ -49,7 +49,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
 // GET /api/invoices/:id
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   const invoice = await prisma.invoice.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: invoiceInclude,
   });
   if (!invoice) { res.status(404).json({ message: 'Invoice not found' }); return; }
@@ -63,7 +63,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response): Promis
 router.patch('/:id/status', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   const { status } = req.body;
   const invoice = await prisma.invoice.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { status, ...(status === 'PAID' ? { paidAt: new Date() } : {}) },
     include: invoiceInclude,
   });
@@ -72,10 +72,10 @@ router.patch('/:id/status', authenticate, requireAdmin, async (req: AuthRequest,
 
 // DELETE /api/invoices/:id (admin — only DRAFT invoices)
 router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
-  const invoice = await prisma.invoice.findUnique({ where: { id: req.params.id } });
+  const invoice = await prisma.invoice.findUnique({ where: { id: String(req.params.id) } });
   if (!invoice) { res.status(404).json({ message: 'Invoice not found' }); return; }
   if (invoice.status !== 'DRAFT') { res.status(400).json({ message: 'Only DRAFT invoices can be deleted' }); return; }
-  await prisma.invoice.delete({ where: { id: req.params.id } });
+  await prisma.invoice.delete({ where: { id: String(req.params.id) } });
   res.json({ data: { message: 'Invoice deleted' } });
 });
 

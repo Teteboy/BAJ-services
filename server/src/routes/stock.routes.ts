@@ -42,7 +42,7 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res: Respo
 router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   const { initialStock, totalDelivered, notes } = req.body;
   const entry = await prisma.stockEntry.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: {
       initialStock: Number(initialStock),
       totalDelivered: Number(totalDelivered),
@@ -56,7 +56,7 @@ router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Res
 
 // DELETE /api/stock/:id
 router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
-  await prisma.stockEntry.delete({ where: { id: req.params.id } });
+  await prisma.stockEntry.delete({ where: { id: String(req.params.id) } });
   res.json({ data: { message: 'Stock entry deleted' } });
 });
 

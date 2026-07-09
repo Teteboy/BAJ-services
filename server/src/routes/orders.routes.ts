@@ -62,7 +62,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
 // GET /api/orders/:id
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   const order = await prisma.order.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: orderInclude,
   });
 
@@ -136,7 +136,7 @@ router.patch('/:id/status', authenticate, requireAdmin, async (req: AuthRequest,
   const { status, note, newDeliveryDate } = req.body;
 
   const existing = await prisma.order.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: { client: { include: { user: { select: { email: true } } } } },
   });
 
@@ -150,7 +150,7 @@ router.patch('/:id/status', authenticate, requireAdmin, async (req: AuthRequest,
   }
 
   const order = await prisma.order.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: updateData,
     include: orderInclude,
   });
@@ -177,7 +177,7 @@ router.patch('/:id/status', authenticate, requireAdmin, async (req: AuthRequest,
 // POST /api/orders/:id/confirm-delivery (admin)
 router.post('/:id/confirm-delivery', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
   const order = await prisma.order.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: {
       client: {
         include: {
