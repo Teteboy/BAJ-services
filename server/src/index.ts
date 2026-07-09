@@ -1,9 +1,27 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
-dotenv.config();
+// Manual .env loader — immune to dotenv version quirks
+const envPath = path.resolve(process.cwd(), '.env');
+if (fs.existsSync(envPath)) {
+  const lines = fs.readFileSync(envPath, 'utf-8').split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+    if (key && !(key in process.env)) process.env[key] = val;
+  }
+  console.log('[ENV] Loaded .env from', envPath);
+} else {
+  console.warn('[ENV] No .env file found at', envPath);
+}
+console.log('[ENV] DATABASE_URL set:', !!process.env.DATABASE_URL);
+console.log('[ENV] JWT_SECRET set:', !!process.env.JWT_SECRET);
 
 import authRoutes from './routes/auth.routes';
 import orderRoutes from './routes/orders.routes';

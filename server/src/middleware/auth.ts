@@ -29,16 +29,17 @@ export async function authenticate(
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET ?? 'secret'
-    ) as jwt.JwtPayload;
+    const secret = process.env.JWT_SECRET ?? 'baj_secret_key';
+    console.log('[AUTH] Verifying token, JWT_SECRET set:', !!process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, secret) as jwt.JwtPayload;
+    console.log('[AUTH] Token decoded for user id:', decoded.id);
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       include: { client: true },
     });
 
+    console.log('[AUTH] User found:', !!user, 'active:', user?.isActive);
     if (!user || !user.isActive) {
       res.status(401).json({ message: 'Unauthorized' });
       return;
@@ -53,7 +54,8 @@ export async function authenticate(
     };
 
     next();
-  } catch {
+  } catch (err) {
+    console.error('[AUTH] Token verification failed:', err);
     res.status(401).json({ message: 'Invalid token' });
   }
 }
