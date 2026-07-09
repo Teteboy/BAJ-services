@@ -35,8 +35,8 @@ export function TableCell({ children, className }: { children: React.ReactNode; 
   return <td className={cn('px-4 py-3.5 text-surface-800', className)}>{children}</td>;
 }
 
-export function TableRow({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <tr className={cn('transition-colors duration-150 hover:bg-surface-100', className)}>{children}</tr>;
+export function TableRow({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
+  return <tr className={cn('transition-colors duration-150 hover:bg-surface-100', className)} onClick={onClick}>{children}</tr>;
 }
 
 export function EmptyState({ message }: { message: string }) {

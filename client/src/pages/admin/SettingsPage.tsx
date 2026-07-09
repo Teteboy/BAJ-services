@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Settings, Bell, Shield, Database, Mail, Globe, Save, RefreshCw } from 'lucide-react';
+import { Settings, Bell, Shield, Database, Save, RefreshCw } from 'lucide-react';
 import { get, post, getErrorMessage } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/Button';
@@ -76,7 +76,7 @@ export default function SettingsPage() {
   const fetchDbInfo = async () => {
     setLoading(true);
     try {
-      const res = await get<{ data: any }>('/reports');
+      await get<{ data: any }>('/reports');
       setDbInfo({ tables: ['users', 'clients', 'orders', 'invoices', 'payments', 'products', 'stock_entries', 'weekly_reports'], rowCounts: {} });
     } catch {
       setDbInfo({ tables: [], rowCounts: {} });
