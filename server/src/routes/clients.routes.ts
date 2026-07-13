@@ -6,7 +6,7 @@ import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth';
 const router = Router();
 
 const clientInclude = {
-  user: { select: { email: true, name: true, isActive: true } },
+  user: { select: { id: true, email: true, name: true, isActive: true } },
   deliveryLocations: true,
   productPrices: { include: { product: true } },
 };
@@ -79,10 +79,21 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res: Respo
 
 // PUT /api/clients/:id — update client
 router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
-  const { companyName, phone, paymentTerms, isActive } = req.body;
+  const { companyName, email, phone, paymentTerms, isActive } = req.body;
   const client = await prisma.client.update({
     where: { id: String(req.params.id) },
-    data: { companyName, phone, paymentTerms, isActive },
+    data: {
+      companyName,
+      phone,
+      paymentTerms,
+      isActive,
+      user: email || companyName ? {
+        update: {
+          ...(email ? { email } : {}),
+          ...(companyName ? { name: companyName } : {}),
+        },
+      } : undefined,
+    },
     include: clientInclude,
   });
   res.json({ data: client });

@@ -17,6 +17,7 @@ const orderInclude = {
   },
   deliveryLocation: true,
   items: { include: { product: true } },
+  invoice: { select: { id: true, invoiceNumber: true, pdfUrl: true } },
 };
 
 function generateOrderNumber(): string {
@@ -27,13 +28,15 @@ function generateOrderNumber(): string {
 
 // GET /api/orders
 router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
-  const { search, status, page = '1', limit = '50' } = req.query as Record<string, string>;
+  const { search, status, clientId, page = '1', limit = '50' } = req.query as Record<string, string>;
 
   const where: any = {};
 
   // Clients only see their own orders
   if (req.user!.role === 'CLIENT') {
     where.clientId = req.user!.clientId;
+  } else if (clientId) {
+    where.clientId = clientId;
   }
 
   if (status) where.status = status;

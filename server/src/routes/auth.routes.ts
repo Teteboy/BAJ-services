@@ -9,8 +9,8 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'baj_secret_key';
 // POST /api/auth/login
 router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
-    console.log('[AUTH] Login attempt for:', email);
+    const { email, password, role: expectedRole } = req.body;
+    console.log('[AUTH] Login attempt for:', email, expectedRole ? `expectedRole: ${expectedRole}` : '');
 
     if (!email || !password) {
       res.status(400).json({ message: 'Email and password are required' });
@@ -21,10 +21,15 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       where: { email },
       include: { client: true },
     });
-    console.log('[AUTH] User found:', !!user, 'active:', user?.isActive);
+    console.log('[AUTH] User found:', !!user, 'active:', user?.isActive, 'role:', user?.role);
 
     if (!user || !user.isActive) {
       res.status(401).json({ message: 'Invalid credentials' });
+      return;
+    }
+
+    if (expectedRole && expectedRole !== user.role) {
+      res.status(403).json({ message: `This account is not authorized as ${expectedRole === 'ADMIN' ? 'an administrator' : 'a client'}` });
       return;
     }
 

@@ -17,6 +17,10 @@ router.get('/admin', authenticate, async (req: AuthRequest, res: Response): Prom
     overduePayments,
     revenueAgg,
     recentOrders,
+    upcomingDeliveryOrders,
+    paymentFollowUp,
+    latestStock,
+    recentPayments,
   ] = await Promise.all([
     prisma.order.count({ where: { status: 'PENDING' } }),
     prisma.order.count({ where: { status: 'VALIDATED' } }),
@@ -39,6 +43,34 @@ router.get('/admin', authenticate, async (req: AuthRequest, res: Response): Prom
         items: { include: { product: true } },
       },
     }),
+    prisma.order.findMany({
+      where: { status: 'VALIDATED' },
+      take: 5,
+      orderBy: { requestedDeliveryDate: 'asc' },
+      include: {
+        client: { select: { companyName: true } },
+        deliveryLocation: true,
+        items: { include: { product: true } },
+      },
+    }),
+    prisma.invoice.findMany({
+      where: { status: { in: ['SENT', 'OVERDUE'] } },
+      take: 5,
+      orderBy: { paymentDeadline: 'asc' },
+      include: {
+        client: { select: { companyName: true } },
+        order: { select: { orderNumber: true } },
+      },
+    }),
+    prisma.stockEntry.findFirst({
+      orderBy: { weekStartDate: 'desc' },
+      include: { product: true },
+    }),
+    prisma.payment.findMany({
+      take: 5,
+      orderBy: { paidAt: 'desc' },
+      include: { invoice: { include: { client: { select: { companyName: true } } } } },
+    }),
   ]);
 
   // Build 7-day orders trend
@@ -52,6 +84,31 @@ router.get('/admin', authenticate, async (req: AuthRequest, res: Response): Prom
     })
   );
 
+  const activity = [
+    ...recentOrders.slice(0, 4).map((o) => ({
+      type: 'order' as const,
+      text: `Order ${o.orderNumber} received from ${o.client.companyName}.`,
+      time: o.createdAt,
+    })),
+    ...recentPayments.map((p) => ({
+      type: 'payment' as const,
+      text: `Payment of ${p.amount.toLocaleString()} XOF received from ${p.invoice.client?.companyName || 'client'}.`,
+      time: p.paidAt,
+    })),
+    ...recentOrders.filter((o) => o.status === 'DELIVERED').slice(0, 2).map((o) => ({
+      type: 'delivery' as const,
+      text: `Delivery ${o.orderNumber} confirmed at ${o.deliveryLocation?.name || o.deliveryLocation?.address || 'site'}.`,
+      time: o.updatedAt,
+    })),
+    ...paymentFollowUp.filter((i) => i.status === 'SENT').slice(0, 2).map((i) => ({
+      type: 'invoice' as const,
+      text: `Invoice ${i.invoiceNumber} sent to ${i.client?.companyName || 'client'}.`,
+      time: i.issuedAt ?? i.createdAt,
+    })),
+  ]
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, 6);
+
   res.json({
     data: {
       pendingOrders,
@@ -63,6 +120,10 @@ router.get('/admin', authenticate, async (req: AuthRequest, res: Response): Prom
       recentOrders,
       ordersTrend,
       revenueTrend: [],
+      upcomingDeliveryOrders,
+      paymentFollowUp,
+      latestStock,
+      activity,
     },
   });
 });
@@ -74,7 +135,7 @@ router.get('/client', authenticate, async (req: AuthRequest, res: Response): Pro
   }
   const clientId = req.user!.clientId;
 
-  const [pendingOrders, validatedOrders, deliveredOrders, unpaidInvoices, spentAgg, recentOrders] =
+  const [pendingOrders, validatedOrders, deliveredOrders, unpaidInvoices, spentAgg, recentOrders, recentInvoices, activeOrders] =
     await Promise.all([
       prisma.order.count({ where: { clientId, status: 'PENDING' } }),
       prisma.order.count({ where: { clientId, status: 'VALIDATED' } }),
@@ -94,6 +155,17 @@ router.get('/client', authenticate, async (req: AuthRequest, res: Response): Pro
         orderBy: { createdAt: 'desc' },
         include: { deliveryLocation: true, items: { include: { product: true } } },
       }),
+      prisma.invoice.findMany({
+        where: { clientId },
+        take: 5,
+        orderBy: { issuedAt: 'desc' },
+      }),
+      prisma.order.findMany({
+        where: { clientId, status: { in: ['PENDING', 'VALIDATED'] } },
+        take: 3,
+        orderBy: { createdAt: 'desc' },
+        include: { deliveryLocation: true, items: { include: { product: true } } },
+      }),
     ]);
 
   res.json({
@@ -104,6 +176,8 @@ router.get('/client', authenticate, async (req: AuthRequest, res: Response): Pro
       unpaidInvoices,
       totalSpentThisMonth: spentAgg._sum.totalAmount ?? 0,
       recentOrders,
+      recentInvoices,
+      activeOrders,
     },
   });
 });

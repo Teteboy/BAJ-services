@@ -8,6 +8,7 @@ import LoginPage from '@/pages/auth/LoginPage';
 import AdminDashboard from '@/pages/admin/DashboardPage';
 import OrdersPage from '@/pages/admin/OrdersPage';
 import ClientsPage from '@/pages/admin/ClientsPage';
+import ClientDetailPage from '@/pages/admin/ClientDetailPage';
 import ProductsPage from '@/pages/admin/ProductsPage';
 import InvoicesPage from '@/pages/admin/InvoicesPage';
 import PaymentsPage from '@/pages/admin/PaymentsPage';
@@ -39,6 +40,7 @@ function App() {
             <Route path="orders" element={<OrdersPage />} />
             <Route path="orders/:id" element={<OrdersPage />} />
             <Route path="clients" element={<ClientsPage />} />
+            <Route path="clients/:id" element={<ClientDetailPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="invoices" element={<InvoicesPage />} />
             <Route path="invoices/:id" element={<InvoicesPage />} />

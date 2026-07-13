@@ -10,9 +10,10 @@ interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
+  variant?: 'light' | 'dark';
 }
 
-export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, footer, size = 'md', variant = 'light' }: ModalProps) {
   if (!isOpen) return null;
 
   const sizeClasses = {
@@ -21,24 +22,35 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
     lg: 'max-w-2xl',
   };
 
+  const isDark = variant === 'dark';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-surface-900/40 backdrop-blur-sm" onClick={onClose} />
       <div
         className={cn(
-          'relative z-10 w-full rounded-2xl border border-surface-300 bg-white shadow-card-hover animate-slide-up',
+          'relative z-10 w-full rounded-2xl shadow-card-hover animate-slide-up',
+          isDark
+            ? 'border border-admin-border bg-admin-card'
+            : 'border border-surface-300 bg-white',
           sizeClasses[size]
         )}
       >
-        <div className="flex items-center justify-between border-b border-surface-200 px-6 py-4">
-          <h2 className="text-sm font-semibold text-surface-900">{title}</h2>
+        <div className={cn(
+          'flex items-center justify-between border-b px-6 py-4',
+          isDark ? 'border-admin-border' : 'border-surface-200'
+        )}>
+          <h2 className={cn('text-sm font-semibold', isDark ? 'text-admin-text' : 'text-surface-900')}>{title}</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4 text-surface-500" />
+            <X className={cn('h-4 w-4', isDark ? 'text-admin-textSub' : 'text-surface-500')} />
           </Button>
         </div>
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">{children}</div>
         {footer ? (
-          <div className="flex items-center justify-end gap-3 border-t border-surface-200 px-6 py-4">
+          <div className={cn(
+            'flex items-center justify-end gap-3 border-t px-6 py-4',
+            isDark ? 'border-admin-border' : 'border-surface-200'
+          )}>
             {footer}
           </div>
         ) : null}

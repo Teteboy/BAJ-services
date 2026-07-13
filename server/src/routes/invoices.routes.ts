@@ -27,9 +27,10 @@ async function autoMarkOverdue() {
 router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   await autoMarkOverdue();
 
-  const { status, page = '1', limit = '50' } = req.query as Record<string, string>;
+  const { status, clientId, page = '1', limit = '50' } = req.query as Record<string, string>;
   const where: any = {};
   if (req.user!.role === 'CLIENT') where.clientId = req.user!.clientId;
+  else if (clientId) where.clientId = clientId;
   if (status) where.status = status;
 
   const [invoices, total] = await Promise.all([

@@ -67,3 +67,41 @@ export function invoiceStatusColor(status: string): BadgeVariant {
       return 'default';
   }
 }
+
+export function exportToCSV(headers: string[], rows: (string | number)[][], filename: string) {
+  const escape = (val: string | number) => {
+    const str = String(val ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+  const csv = [headers.map(escape).join(','), ...rows.map((row) => row.map(escape).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export async function downloadFile(url: string, filename: string) {
+  try {
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${localStorage.getItem('baj_token') ?? ''}` } });
+    if (!response.ok) throw new Error('Download failed');
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(objectUrl);
+  } catch (err) {
+    window.open(url, '_blank');
+  }
+}
